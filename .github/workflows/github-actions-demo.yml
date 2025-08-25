@@ -23,10 +23,16 @@ jobs:
           # 编译为 Python 模块 (so)
           python -m nuitka --module app --include-package=app
           ls -lh
-
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: encrypted-so
-          path: app*.so
+          files: |
+            app*.so
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # - name: Upload Artifact
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: encrypted-so
+      #     path: app*.so
