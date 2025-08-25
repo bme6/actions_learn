@@ -1,54 +1,32 @@
-name: Python package
-
+name: Build Nuitka so
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
-
 jobs:
   build:
-    
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [ "3.9"]
-      
-        
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
-      # You can test your matrix by printing the current Python version
-      - name: Display Python version
-        run: |
-          pip install pip --upgrade
-          pip install nuitka
-          python -m nuitka --module app --include-package=app
+          python-version: "3.11"
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # 由 GitHub 自动提供，无需配置
+      - name: Install Nuitka
+        run: |
+          python -m pip install --upgrade pip
+          pip install nuitka
+
+      - name: Build with Nuitka
+        run: |
+          # 编译为 Python 模块 (so)
+          python -m nuitka --module app --include-package=app
+          ls -lh
+
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: ${{ github.ref_name }} # 当前推送的标签名，如 v1.0.0
-          release_name: Release ${{ github.ref_name }}
-          # body: 可以在这里写固定的 Release 说明
-          body: |
-            Automated release for version ${{ github.ref_name }}.
-            Changelog will be added here in the future.
-          draft: false # 是否设置为草稿（true/false）
-          prerelease: false # 是否设置为预发布版本（true/false） 
-        # 4. 上传资源到刚创建的 Release
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} # 这是关键，从上一步获取上传URL
-          asset_path: ./app.*.so
-          asset_name: my-app-${{ github.ref_name }}.so
-          asset_content_type: application/zip
+          name: encrypted-so
+          path: app*.so
